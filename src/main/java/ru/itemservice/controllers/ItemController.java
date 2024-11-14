@@ -1,37 +1,56 @@
 package ru.itemservice.controllers;
 
-import ru.itemservice.models.SimpleResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.extensions.Extension;
-import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
-import org.springframework.http.MediaType;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.itemservice.dtos.AddItemRequest;
+import ru.itemservice.dtos.AddItemResponse;
+import ru.itemservice.services.interfaces.IItemService;
 
 @CrossOrigin()
 @RestController
-@RequestMapping("/order")
+@RequiredArgsConstructor
+@RequestMapping("/v1/items")
 public class ItemController {
 
-    @GetMapping(value = "/test", produces = {MediaType.APPLICATION_JSON_VALUE})
-    @Operation(summary = "Say hello to Watson")
-    public SimpleResponse<String> hello() {
-        return new SimpleResponse<>("Hello, Watson!");
-    }
+    private final IItemService itemService;
 
-    @GetMapping(value = "/hello/{name}", produces = {MediaType.APPLICATION_JSON_VALUE})
+    @PostMapping()
     @Operation(
-            summary = "Say hello to someone",
-            parameters = {
-                    @Parameter(
-                            name = "name",
-                            description = "Name of person to greet",
-                            extensions = @Extension(properties = {@ExtensionProperty(name = "x-ibm-label", value = "Name")})
+            summary = "Create a new order",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Required params for creating an item",
+                    content = @Content(
+                            schema = @Schema(implementation = AddItemRequest.class)
+                    )
+            ),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "201",
+                            description = "Item successfully created",
+                            content = @Content(
+                                    schema = @Schema(implementation = AddItemResponse.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Bad request"
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Internal server error"
                     )
             }
     )
-    public SimpleResponse<String> helloName(@PathVariable("name") String name) {
-        return new SimpleResponse<>(String.format("Hello, %s!", name));
+    public ResponseEntity<AddItemResponse> createItem(@RequestBody @Valid AddItemRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(itemService.addItem(request));
     }
+
 }
 
